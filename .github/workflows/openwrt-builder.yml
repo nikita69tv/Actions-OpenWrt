@@ -60,6 +60,12 @@ jobs:
         df -hT $PWD
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+        
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      if: github.event.inputs.ssh == 'true'
+      with:
+        limit-access-to-actor: false
 
     - name: Load custom feeds
       run: |
@@ -81,12 +87,6 @@ jobs:
         chmod +x $DIY_P2_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
-        
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-      if: github.event.inputs.ssh == 'true'
-      with:
-        limit-access-to-actor: false
 
     - name: Download package
       id: package
