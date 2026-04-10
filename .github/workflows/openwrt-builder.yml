@@ -10,10 +10,9 @@ on:
         default: 'false'
 
 env:
+  # Используем последнюю ванильную версию OpenWrt
   REPO_URL: https://github.com/openwrt/openwrt
   REPO_BRANCH: main
-#  REPO_URL: https://github.com/coolsnowwolf/lede
-#  REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: config
   DIY_P1_SH: diy-part1.sh
@@ -33,14 +32,14 @@ jobs:
             target: mediatek
             subtarget: mt7622
             friendly_name: AX3200
-            # Твой изначальный полный набор
+            # Твой изначальный полный набор для AX3200
             packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc btop htop netdata openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru sqm-scripts tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-upnp luci-app-watchcat luci-app-nlbwmon podkop luci-app-podkop amneziawg-tools kmod-amneziawg luci-proto-amneziawg"
           
           - device: xiaomi_mi-router-ax3000t
             target: mediatek
             subtarget: filogic
             friendly_name: AX3000T
-            # Твой новый набор (без btop и sqm)
+            # Твой облегченный набор для AX3000T (без btop и sqm)
             packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc htop netdata openssh-sftp-server tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-watchcat luci-i18n-watchcat-ru watchcat luci-app-nlbwmon luci-i18n-nlbwmon-ru nlbwmon podkop luci-app-podkop luci-i18n-podkop-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
 
     name: Build ${{ matrix.friendly_name }}
@@ -61,13 +60,6 @@ jobs:
         run: |
           git clone $REPO_URL -b $REPO_BRANCH openwrt
           ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
-          
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: github.event.inputs.ssh == 'true'
-        with:
-          limit-access-to-actor: false
-        
 
       - name: Load custom feeds
         run: |
@@ -84,26 +76,33 @@ jobs:
 
       - name: Load custom configuration
         run: |
-          [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config
+          # Исправлено: заходим в директорию openwrt и проверяем наличие файла корректно
+          cd openwrt
+          if [ -e $GITHUB_WORKSPACE/$CONFIG_FILE ]; then
+            cp $GITHUB_WORKSPACE/$CONFIG_FILE .config
+          else
+            touch .config
+          fi
           
-          # Очистка и установка цели
-          sed -i 's/CONFIG_TARGET_mediatek=y/# CONFIG_TARGET_mediatek is not set/' openwrt/.config
-          echo "CONFIG_TARGET_${{ matrix.target }}=y" >> openwrt/.config
-          echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y" >> openwrt/.config
-          echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}_DEVICE_${{ matrix.device }}=y" >> openwrt/.config
+          # Очистка и установка целевого устройства
+          sed -i 's/CONFIG_TARGET_mediatek=y/# CONFIG_TARGET_mediatek is not set/' .config
+          echo "CONFIG_TARGET_${{ matrix.target }}=y" >> .config
+          echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y" >> .config
+          echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}_DEVICE_${{ matrix.device }}=y" >> .config
           
-          # Принудительная замена dnsmasq и wpad (удаление стандартных)
-          echo "CONFIG_PACKAGE_dnsmasq=n" >> openwrt/.config
-          echo "CONFIG_PACKAGE_wpad-basic-mbedtls=n" >> openwrt/.config
+          # Принудительная замена базовых пакетов на расширенные
+          echo "CONFIG_PACKAGE_dnsmasq=n" >> .config
+          echo "CONFIG_PACKAGE_wpad-basic-mbedtls=n" >> .config
           
           # Добавление пакетов из матрицы
           for pkg in ${{ matrix.packages }}; do
-            echo "CONFIG_PACKAGE_$pkg=y" >> openwrt/.config
+            echo "CONFIG_PACKAGE_$pkg=y" >> .config
           done
           
-          chmod +x $DIY_P2_SH
-          cd openwrt
+          # Запуск diy-part2.sh для подмены Sing-box Extended
+          chmod +x $GITHUB_WORKSPACE/$DIY_P2_SH
           $GITHUB_WORKSPACE/$DIY_P2_SH
+          
           make defconfig
 
       - name: Download & Compile
@@ -111,7 +110,6 @@ jobs:
           cd openwrt
           make download -j8
           make -j$(nproc) || make -j1 V=s
-          echo "status=success" >> $GITHUB_OUTPUT
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
