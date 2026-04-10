@@ -69,3 +69,26 @@ done
 for pkg in podkop luci-app-podkop luci-i18n-podkop-ru; do
     echo "CONFIG_PACKAGE_$pkg=y" >> .config
 done
+
+# 1. Создаем временную папку для работы
+mkdir -p temp_singbox
+
+# 2. Скачиваем именно ту версию, которую мы нашли в твоем логе (arm64)
+wget -O temp_singbox/singbox.tar.gz https://github.com/shtorm-7/sing-box-extended/releases/download/v1.13.2-extended-1.6.2/sing-box-1.13.2-extended-1.6.2-linux-arm64.tar.gz
+
+# 3. Распаковываем архив
+tar -xzf temp_singbox/singbox.tar.gz -C temp_singbox
+
+# 4. Создаем структуру папок 'files' (это магическая папка в билдере)
+# Все, что в ней лежит, попадает в корень роутера ПОСЛЕ установки всех пакетов
+mkdir -p files/usr/bin
+
+# 5. Копируем расширенный файл sing-box в нашу структуру
+# Ищем его внутри распакованной папки
+find temp_singbox -name "sing-box" -type f -exec cp {} files/usr/bin/sing-box \;
+
+# 6. Делаем файл исполняемым
+chmod +x files/usr/bin/sing-box
+
+# 7. Удаляем временный мусор, чтобы не занимал место в билдере
+rm -rf temp_singbox
