@@ -18,3 +18,12 @@
 
 # Modify hostname
 #sed -i 's/OpenWrt/P3TERX-Router/g' package/base-files/files/bin/config_generate
+# Обновляем фиды
+./scripts/feeds update -a
+./scripts/feeds install -a
+
+# Выбираем пакеты для сборки (эквивалент выбора в menuconfig)
+echo "CONFIG_PACKAGE_luci-app-podkop=y" >> .config
+echo "CONFIG_PACKAGE_sing-box=y" >> .config
+echo "CONFIG_PACKAGE_dnsmasq-full=y" >> .config
+echo "CONFIG_PACKAGE_dnsmasq=n" >> .config
