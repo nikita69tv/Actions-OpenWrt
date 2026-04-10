@@ -10,10 +10,8 @@ on:
         default: 'false'
 
 env:
-  REPO_URL: https://github.com/openwrt/openwrt
-  REPO_BRANCH: main
-#  REPO_URL: https://github.com/coolsnowwolf/lede
-#  REPO_BRANCH: master
+  REPO_URL: https://github.com/coolsnowwolf/lede
+  REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: config
   DIY_P1_SH: diy-part1.sh
@@ -33,15 +31,15 @@ jobs:
             target: mediatek
             subtarget: mt7622
             friendly_name: AX3200
-            # Полный набор пакетов для AX3200
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc btop htop netdata openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru luci-app-statistics luci-app-upnp luci-app-watchcat luci-app-nlbwmon podkop luci-app-podkop luci-i18n-podkop-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
+            # Твой изначальный полный набор
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc btop htop netdata openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru sqm-scripts tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-upnp luci-app-watchcat luci-app-nlbwmon podkop luci-app-podkop amneziawg-tools kmod-amneziawg luci-proto-amneziawg"
           
-          - device: xiaomi_redmi-router-ax3000t
+          - device: xiaomi_mi-router-ax3000t
             target: mediatek
             subtarget: filogic
             friendly_name: AX3000T
-            # Облегченный набор для AX3000T (без тяжелого мониторинга)
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano podkop luci-app-podkop luci-i18n-podkop-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
+            # Твой новый набор (без btop и sqm)
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc htop netdata openssh-sftp-server tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-watchcat luci-i18n-watchcat-ru watchcat luci-app-nlbwmon luci-i18n-nlbwmon-ru nlbwmon podkop luci-app-podkop luci-i18n-podkop-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
 
     name: Build ${{ matrix.friendly_name }}
     steps:
@@ -49,14 +47,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialization environment
-        env:
-          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost /usr/lib/jvm
           sudo -E apt-get -qq update
           sudo -E apt-get -qq install $(curl -fsSL https://is.gd/depends_static_ubuntu_2204)
-          sudo -E apt-get -qq autoremove --purge
-          sudo -E apt-get -qq clean
           sudo timedatectl set-timezone "$TZ"
           sudo mkdir -p /workdir
           sudo chown $USER:$USER /workdir
@@ -71,8 +64,9 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         if: github.event.inputs.ssh == 'true'
         with:
-           limit-access-to-actor: false
+          limit-access-to-actor: false
         
+
       - name: Load custom feeds
         run: |
           [ -e $FEEDS_CONF ] && cp $FEEDS_CONF openwrt/feeds.conf.default
@@ -88,14 +82,17 @@ jobs:
 
       - name: Load custom configuration
         run: |
-          [ -e files ] && mv files openwrt/files
           [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config
           
-          # Настройка таргета из матрицы
+          # Очистка и установка цели
           sed -i 's/CONFIG_TARGET_mediatek=y/# CONFIG_TARGET_mediatek is not set/' openwrt/.config
           echo "CONFIG_TARGET_${{ matrix.target }}=y" >> openwrt/.config
           echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y" >> openwrt/.config
           echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}_DEVICE_${{ matrix.device }}=y" >> openwrt/.config
+          
+          # Принудительная замена dnsmasq и wpad (удаление стандартных)
+          echo "CONFIG_PACKAGE_dnsmasq=n" >> openwrt/.config
+          echo "CONFIG_PACKAGE_wpad-basic-mbedtls=n" >> openwrt/.config
           
           # Добавление пакетов из матрицы
           for pkg in ${{ matrix.packages }}; do
@@ -107,24 +104,15 @@ jobs:
           $GITHUB_WORKSPACE/$DIY_P2_SH
           make defconfig
 
-      - name: Download package
+      - name: Download & Compile
         run: |
           cd openwrt
           make download -j8
-          find dl -size -1024c -exec ls -l {} \;
-          find dl -size -1024c -exec rm -f {} \;
-
-      - name: Compile the firmware
-        id: compile
-        run: |
-          cd openwrt
-          echo -e "$(nproc) thread compile"
-          make -j$(nproc) || make -j1 || make -j1 V=s
+          make -j$(nproc) || make -j1 V=s
           echo "status=success" >> $GITHUB_OUTPUT
 
-      - name: Upload firmware directory
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
-        if: steps.compile.outputs.status == 'success' && env.UPLOAD_FIRMWARE == 'true'
         with:
-          name: OpenWrt_firmware_${{ matrix.friendly_name }}
+          name: Firmware_${{ matrix.friendly_name }}
           path: openwrt/bin/targets/${{ matrix.target }}/${{ matrix.subtarget }}
