@@ -70,25 +70,27 @@ for pkg in podkop luci-app-podkop luci-i18n-podkop-ru; do
     echo "CONFIG_PACKAGE_$pkg=y" >> .config
 done
 
+# --- 8. ПОДМЕНА ЯДРА SING-BOX НА EXTENDED ВЕРСИЮ ---
 # 1. Создаем временную папку для работы
 mkdir -p temp_singbox
 
-# 2. Скачиваем именно ту версию, которую мы нашли в твоем логе (arm64)
+# 2. Скачиваем расширенную версию (arm64)
 wget -O temp_singbox/singbox.tar.gz https://github.com/shtorm-7/sing-box-extended/releases/download/v1.13.2-extended-1.6.2/sing-box-1.13.2-extended-1.6.2-linux-arm64.tar.gz
 
 # 3. Распаковываем архив
 tar -xzf temp_singbox/singbox.tar.gz -C temp_singbox
 
-# 4. Создаем структуру папок 'files' (это магическая папка в билдере)
-# Все, что в ней лежит, попадает в корень роутера ПОСЛЕ установки всех пакетов
+# 4. Создаем структуру папок 'files'. 
+# В GitHub Actions корень сборки обычно и есть текущая папка.
 mkdir -p files/usr/bin
 
 # 5. Копируем расширенный файл sing-box в нашу структуру
-# Ищем его внутри распакованной папки
 find temp_singbox -name "sing-box" -type f -exec cp {} files/usr/bin/sing-box \;
 
-# 6. Делаем файл исполняемым
+# 6. Делаем файл исполняемым (критически важно для работы сервиса)
 chmod +x files/usr/bin/sing-box
 
-# 7. Удаляем временный мусор, чтобы не занимал место в билдере
+# 7. Удаляем временный мусор
 rm -rf temp_singbox
+
+echo "Extended Sing-Box успешно подложен в папку files!"
