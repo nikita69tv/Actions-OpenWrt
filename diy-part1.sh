@@ -17,4 +17,5 @@
 echo 'src-git helloworld https://github.com/fw876/helloworld' >>feeds.conf.default
 #echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
 echo 'src-git podkop https://github.com/itdoginfo/podkop.git' >> feeds.conf.default
+echo 'src-git amneziawg https://github.com/Slava-Shchipunov/awg-openwrt' >> feeds.conf.default
 
