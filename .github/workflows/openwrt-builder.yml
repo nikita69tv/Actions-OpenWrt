@@ -32,14 +32,12 @@ jobs:
             target: mediatek
             subtarget: mt7622
             friendly_name: AX3200
-            # Твой изначальный полный набор для AX3200
             packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc btop htop netdata openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru sqm-scripts tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-upnp luci-app-watchcat luci-app-nlbwmon podkop luci-app-podkop amneziawg-tools kmod-amneziawg luci-proto-amneziawg"
           
           - device: xiaomi_mi-router-ax3000t
             target: mediatek
             subtarget: filogic
             friendly_name: AX3000T
-            # Твой облегченный набор для AX3000T (без btop и sqm)
             packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc htop netdata openssh-sftp-server tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-watchcat luci-i18n-watchcat-ru watchcat luci-app-nlbwmon luci-i18n-nlbwmon-ru nlbwmon podkop luci-app-podkop luci-i18n-podkop-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
 
     name: Build ${{ matrix.friendly_name }}
@@ -76,7 +74,6 @@ jobs:
 
       - name: Load custom configuration
         run: |
-          # Исправлено: заходим в директорию openwrt и проверяем наличие файла корректно
           cd openwrt
           if [ -e $GITHUB_WORKSPACE/$CONFIG_FILE ]; then
             cp $GITHUB_WORKSPACE/$CONFIG_FILE .config
@@ -84,13 +81,13 @@ jobs:
             touch .config
           fi
           
-          # Очистка и установка целевого устройства
+          # Очистка и установка цели
           sed -i 's/CONFIG_TARGET_mediatek=y/# CONFIG_TARGET_mediatek is not set/' .config
           echo "CONFIG_TARGET_${{ matrix.target }}=y" >> .config
           echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y" >> .config
           echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}_DEVICE_${{ matrix.device }}=y" >> .config
           
-          # Принудительная замена базовых пакетов на расширенные
+          # Удаление стандартных пакетов для замены на расширенные
           echo "CONFIG_PACKAGE_dnsmasq=n" >> .config
           echo "CONFIG_PACKAGE_wpad-basic-mbedtls=n" >> .config
           
@@ -99,7 +96,7 @@ jobs:
             echo "CONFIG_PACKAGE_$pkg=y" >> .config
           done
           
-          # Запуск diy-part2.sh для подмены Sing-box Extended
+          # Подмена Sing-box (скрипт создаст папку files внутри openwrt)
           chmod +x $GITHUB_WORKSPACE/$DIY_P2_SH
           $GITHUB_WORKSPACE/$DIY_P2_SH
           
@@ -116,3 +113,31 @@ jobs:
         with:
           name: Firmware_${{ matrix.friendly_name }}
           path: openwrt/bin/targets/${{ matrix.target }}/${{ matrix.subtarget }}
+
+      - name: Generate release tag
+        id: tag
+        run: |
+          echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Prepare files for Release
+        run: |
+          cd openwrt/bin/targets/${{ matrix.target }}/${{ matrix.subtarget }}
+          # Переименовываем все файлы, добавляя префикс модели (например, AX3200_...)
+          for file in *; do
+            if [ -f "$file" ]; then
+              mv "$file" "${{ matrix.friendly_name }}_$file"
+            fi
+          done
+          echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
+
+      - name: Upload firmware to release
+        uses: softprops/action-gh-release@v1
+        if: steps.tag.outputs.status == 'success' && !cancelled()
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          files: ${{ env.FIRMWARE_PATH }}/*
+          body: |
+            Обновление прошивок OpenWrt (ванильная ветка main).
+            Устройства в этом релизе: AX3200 (AX6S) и AX3000T.
+            Версия Sing-box: Extended.
