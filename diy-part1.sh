@@ -17,6 +17,6 @@
 echo 'src-git helloworld https://github.com/fw876/helloworld' >>feeds.conf.default
 #echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
 
-# Заменили podkop на форк podkop-plus версии 0.7.19.9
+# Заменили оригинальный podkop на podkop-plus версии 0.7.19.9
 echo 'src-git podkop https://github.com/ushan0v/podkop-plus.git^0.7.19.9' >> feeds.conf.default
 echo 'src-git amneziawg https://github.com/Slava-Shchipunov/awg-openwrt' >> feeds.conf.default
