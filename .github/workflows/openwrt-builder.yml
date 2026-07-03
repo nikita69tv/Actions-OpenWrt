@@ -32,13 +32,19 @@ jobs:
             target: mediatek
             subtarget: mt7622
             friendly_name: AX3200
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc btop htop netdata openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru sqm-scripts tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-upnp luci-app-watchcat luci-app-nlbwmon podkop luci-app-podkop amneziawg-tools kmod-amneziawg luci-proto-amneziawg"
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc btop htop netdata openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru sqm-scripts tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-upnp luci-app-watchcat luci-app-nlbwmon podkop-plus luci-app-podkop-plus amneziawg-tools kmod-amneziawg luci-proto-amneziawg"
           
           - device: xiaomi_mi-router-ax3000t
             target: mediatek
             subtarget: filogic
             friendly_name: AX3000T
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc htop netdata openssh-sftp-server tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-watchcat luci-i18n-watchcat-ru watchcat luci-app-nlbwmon luci-i18n-nlbwmon-ru nlbwmon podkop luci-app-podkop luci-i18n-podkop-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc htop netdata openssh-sftp-server tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-watchcat luci-i18n-watchcat-ru watchcat luci-app-nlbwmon luci-i18n-nlbwmon-ru nlbwmon podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
+
+          - device: cudy_wr3000p_v1
+            target: mediatek
+            subtarget: filogic
+            friendly_name: WR3000P
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc htop netdata openssh-sftp-server tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-watchcat luci-i18n-watchcat-ru watchcat luci-app-nlbwmon luci-i18n-nlbwmon-ru nlbwmon podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
 
     name: Build ${{ matrix.friendly_name }}
     steps:
@@ -139,5 +145,6 @@ jobs:
           files: ${{ env.FIRMWARE_PATH }}/*
           body: |
             Обновление прошивок OpenWrt (ванильная ветка main).
-            Устройства в этом релизе: AX3200 (AX6S) и AX3000T.
-            Версия Sing-box: Extended.
+            Устройства: AX3200 (AX6S), AX3000T и Cudy WR3000P v1.
+            Sing-box: Extended.
+            Podkop: Plus 0.7.19.9.
