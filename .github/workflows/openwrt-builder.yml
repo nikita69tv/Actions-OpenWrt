@@ -123,7 +123,8 @@ jobs:
       - name: Generate release tag
         id: tag
         run: |
-          echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
+          # Используем дату и уникальный номер текущего запуска Actions
+          echo "release_tag=$(date +"%Y.%m.%d")-run${{ github.run_number }}" >> $GITHUB_OUTPUT
           echo "status=success" >> $GITHUB_OUTPUT
 
       - name: Prepare files for Release
