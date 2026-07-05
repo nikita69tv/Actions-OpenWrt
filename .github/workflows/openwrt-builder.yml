@@ -32,19 +32,19 @@ jobs:
             target: mediatek
             subtarget: mt7622
             friendly_name: AX3200
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru sqm-scripts tc-tiny luci-app-watchcat podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru"
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru sqm-scripts tc-tiny luci-app-watchcat podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
           
           - device: xiaomi_mi-router-ax3000t
             target: mediatek
             subtarget: filogic
             friendly_name: AX3000T
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano openssh-sftp-server tc-tiny luci-app-watchcat luci-i18n-watchcat-ru watchcat podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru"
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano openssh-sftp-server tc-tiny luci-app-watchcat luci-i18n-watchcat-ru watchcat podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
 
           - device: cudy_wr3000p_v1
             target: mediatek
             subtarget: filogic
             friendly_name: WR3000P
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano openssh-sftp-server tc-tiny luci-app-watchcat luci-i18n-watchcat-ru watchcat podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru"
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano openssh-sftp-server tc-tiny luci-app-watchcat luci-i18n-watchcat-ru watchcat podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
 
     name: Build ${{ matrix.friendly_name }}
     steps:
