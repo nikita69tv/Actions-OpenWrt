@@ -32,19 +32,19 @@ jobs:
             target: mediatek
             subtarget: mt7622
             friendly_name: AX3200
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc btop htop netdata openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru sqm-scripts tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-upnp luci-app-watchcat luci-app-nlbwmon podkop-plus luci-app-podkop-plus kmod-wireguard luci-proto-wireguard amneziawg-tools kmod-amneziawg luci-proto-amneziawg"
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano openssh-sftp-server luci-app-sqm luci-i18n-sqm-ru sqm-scripts tc-tiny luci-app-watchcat podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru"
           
           - device: xiaomi_mi-router-ax3000t
             target: mediatek
             subtarget: filogic
             friendly_name: AX3000T
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc htop netdata openssh-sftp-server tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-watchcat luci-i18n-watchcat-ru watchcat luci-app-nlbwmon luci-i18n-nlbwmon-ru nlbwmon podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru kmod-wireguard luci-proto-wireguard amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano openssh-sftp-server tc-tiny luci-app-watchcat luci-i18n-watchcat-ru watchcat podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru"
 
           - device: cudy_wr3000p_v1
             target: mediatek
             subtarget: filogic
             friendly_name: WR3000P
-            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano mc htop netdata openssh-sftp-server tc-tiny luci-app-statistics luci-i18n-statistics-ru collectd collectd-mod-conntrack collectd-mod-cpu collectd-mod-cpufreq collectd-mod-entropy collectd-mod-interface collectd-mod-iwinfo collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-ping collectd-mod-rrdtool collectd-mod-thermal collectd-mod-uptime luci-app-watchcat luci-i18n-watchcat-ru watchcat luci-app-nlbwmon luci-i18n-nlbwmon-ru nlbwmon podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru kmod-wireguard luci-proto-wireguard amneziawg-tools kmod-amneziawg luci-proto-amneziawg luci-i18n-amneziawg-ru"
+            packages: "luci luci-i18n-base-ru luci-i18n-firewall-ru luci-i18n-package-manager-ru dnsmasq-full wpad-openssl luci-ssl sing-box curl jq ca-bundle nano openssh-sftp-server tc-tiny luci-app-watchcat luci-i18n-watchcat-ru watchcat podkop-plus luci-app-podkop-plus luci-i18n-podkop-plus-ru"
 
     name: Build ${{ matrix.friendly_name }}
     steps:
@@ -93,21 +93,35 @@ jobs:
           echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y" >> .config
           echo "CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}_DEVICE_${{ matrix.device }}=y" >> .config
           
-          # Удаление стандартных пакетов для замены на расширенные
+          # Удаление стандартных пакетов
           echo "CONFIG_PACKAGE_dnsmasq=n" >> .config
           echo "CONFIG_PACKAGE_wpad-basic-mbedtls=n" >> .config
           
-          # Добавление пакетов из матрицы
+          # 1. Первый прогон defconfig для применения базовой архитектуры
+          make defconfig
+          
+          # 2. Добавление пакетов из матрицы
           for pkg in ${{ matrix.packages }}; do
             echo "CONFIG_PACKAGE_$pkg=y" >> .config
           done
+          
+          # Жестко указываем язык
+          echo "CONFIG_LUCI_LANG_ru=y" >> .config
+          
+          # 3. Второй прогон defconfig, чтобы он подтянул зависимости для новых пакетов
+          make defconfig
+          
+          # 4. ФИНАЛЬНЫЙ УДАР: принудительно возвращаем всем пакетам статус встраиваемых (=y), 
+          # если defconfig попытался сбросить их в модули (=m)
+          for pkg in ${{ matrix.packages }}; do
+            sed -i "s/CONFIG_PACKAGE_$pkg=m/CONFIG_PACKAGE_$pkg=y/g" .config
+          done
+          sed -i "s/CONFIG_LUCI_LANG_ru=m/CONFIG_LUCI_LANG_ru=y/g" .config
           
           # Подмена Sing-box (скрипт создаст папку files внутри openwrt)
           chmod +x $GITHUB_WORKSPACE/$DIY_P2_SH
           $GITHUB_WORKSPACE/$DIY_P2_SH
           
-          make defconfig
-
       - name: Download & Compile
         run: |
           cd openwrt
