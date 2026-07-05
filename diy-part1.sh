@@ -1,22 +1,19 @@
 #!/bin/bash
-#
-# https://github.com/P3TERX/Actions-OpenWrt
-# File name: diy-part1.sh
-# Description: OpenWrt DIY script part 1 (Before Update feeds)
-#
-# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
+# Название файла: diy-part1.sh
+# Описание: Подготовка кастомных пакетов в обход ошибки .adb
 
-# Uncomment a feed source
-#sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
+echo "--- Начинаем загрузку кастомных пакетов напрямую ---"
 
-# Add a feed source
-#echo 'src-git helloworld https://github.com/fw876/helloworld' >>feeds.conf.default
-#echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
+# Создаем папку для наших кастомных плагинов (чтобы не путались с системными)
+mkdir -p package/custom
 
-# Заменили оригинальный podkop на podkop-plus версии 0.7.19.9
-echo 'src-git podkop https://github.com/ushan0v/podkop-plus.git' >> feeds.conf.default
-#echo 'src-git amneziawg https://github.com/Slava-Shchipunov/awg-openwrt' >> feeds.conf.default
+# 1. Скачиваем Podkop-plus напрямую в локальные пакеты
+git clone https://github.com/ushan0v/podkop-plus.git package/custom/podkop
+
+# 2. Скачиваем AmneziaWG напрямую в локальные пакеты
+git clone https://github.com/Slava-Shchipunov/awg-openwrt package/custom/amneziawg
+
+# От Helloworld мы отказываемся полностью, поэтому его тут нет.
+# В feeds.conf.default мы больше ничего не пишем!
+
+echo "--- Кастомные пакеты успешно загружены локально ---"
